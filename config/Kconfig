@@ -1,0 +1,4 @@
+# Placeholder - config/zephyr/module.yml points here even though there
+# are currently no custom Kconfig options to define. The per-layer RGB
+# color feature (config/src/rgb_layer_color.c) only needs
+# CONFIG_ZMK_RGB_UNDERGLOW, already set in sofle.conf.
