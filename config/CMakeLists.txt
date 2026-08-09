@@ -9,4 +9,5 @@ if(CONFIG_ZMK_DISPLAY_STATUS_SCREEN_CUSTOM)
   endif()
 
   zephyr_include_directories(include)
+  zephyr_include_directories(${APPLICATION_SOURCE_DIR}/include)
 endif()
