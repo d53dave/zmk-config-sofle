@@ -4,13 +4,18 @@ Context dump for picking this back up after a reboot.
 
 ## Where things stand
 
-`master` builds green ([run 31333820887](https://github.com/d53dave/zmk-config-sofle/actions/runs/31333820887))
-with **RGB underglow re-enabled**. Brightness and color are confirmed
-working on hardware. RGB_TOG was still crashing as of commit `57f6ed3`
-(see below) — a fix is in commit `57f24b2`, pending flash/confirm.
+`master` builds green ([run 31334571549](https://github.com/d53dave/zmk-config-sofle/actions/runs/31334571549))
+with **RGB underglow disabled again** (commit `cfd6ada`). This is a
+recovery build to get a bootable keyboard back — flash it to both
+halves.
 
-Two separate things were going on, and they got conflated as one
-"brownout" during earlier diagnosis:
+This is a **wired split, no batteries** — left half is USB-powered
+(through the powered hub), right half draws its power over the TRRS
+cable from the left half's regulator, not from its own USB connection.
+That TRRS-fed path has much less current headroom than direct USB.
+
+Three separate things were going on, conflated as one "brownout" during
+earlier diagnosis:
 
 1. **Hardware defects** (42keebs v3 board): one LED's solder pad had
    lifted and lost power connection (bridged), and the board's
@@ -23,8 +28,8 @@ Two separate things were going on, and they got conflated as one
    indicator is no longer bypassed, it's part of the same WS2812 data
    chain as the underglow LEDs: `chain-length` went from `6` to `7`
    (6 underglow + 1 indicator) in `sofle.keymap`.
-2. **The real cause of the toggle-specific crash** (screens blank, keys
-   drop/double-fire, only a power cycle recovers): `sofle.conf` had
+2. **The toggle-specific crash** (screens blank, keys drop/double-fire,
+   only a power cycle recovers): `sofle.conf` had
    `CONFIG_ZMK_RGB_UNDERGLOW_EXT_POWER=y`, which makes `RGB_TOG` also
    toggle `ext_power` off — and `ext_power` apparently feeds the
    displays (and glitches the matrix on the transition). This explains
@@ -32,7 +37,17 @@ Two separate things were going on, and they got conflated as one
    broke things. The old `infused-kim` fork config already had this set
    to `n` with a comment describing this exact symptom — missed when
    reconstructing the RGB config from scratch for the mainline
-   migration. Fixed in commit `57f24b2`.
+   migration. Fixed in commit `57f24b2` — **this fix is real and should
+   stay**, but wasn't sufficient on its own (see #3).
+3. **Boot-time brownout on the right half** (fixed #1 and #2 applied,
+   but underglow was persisted "on" from prior testing): the right half
+   went completely dead at boot, before it could even receive a toggle
+   command. Root cause: with RGB persisted on, the LED strip
+   (chain-length 7) initializes immediately at boot — and the right
+   half's TRRS-fed power path can't supply that current draw the way
+   the left half's direct USB connection can. Mitigated for now by
+   disabling RGB again (commit `cfd6ada`), which stops strip init at
+   boot regardless of persisted state.
 
 ## What happened today
 
@@ -69,10 +84,25 @@ Two separate things were going on, and they got conflated as one
    still crashed the same way.
 5. **Toggle-specific root cause found**: `CONFIG_ZMK_RGB_UNDERGLOW_EXT_POWER=y`
    coupling `RGB_TOG` to `ext_power` (see "Where things stand" above).
-   Set to `n` in commit `57f24b2`. Pending flash/confirm.
+   Set to `n` in commit `57f24b2`.
+6. **Right half went dead on boot** after flashing the above (underglow
+   was persisted "on" from earlier testing). Traced to the TRRS-fed
+   power path on the right half not having enough current headroom for
+   boot-time strip init (see "Where things stand" #3). RGB disabled
+   again in commit `cfd6ada` to recover a bootable keyboard.
 
 ## Still open / next steps
 
+- **Re-enabling RGB again needs a strategy that survives boot-time
+  init on the TRRS-fed right half**, not just avoiding the ext_power
+  coupling. Options to consider: a much lower `CONFIG_ZMK_RGB_UNDERGLOW_BRT_STEP`
+  / initial brightness so first-boot current draw is small even if
+  state was persisted "on"; forcing underglow off by default on every
+  boot instead of persisting state; or physically improving the
+  right-half power delivery (thicker TRRS power conductor / added
+  decoupling capacitor on that half specifically, right at the strip's
+  VCC/GND). Should probably verify current draw with a meter before
+  guessing again.
 - Kailh clicky switch swap (the original reason for revisiting this repo)
   hasn't been touched — it's a hardware-only change, no firmware config
   needed for a switch swap.
