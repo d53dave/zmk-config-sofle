@@ -1,4 +1,0 @@
-name: zmk-config-sofle
-build:
-  cmake: .
-  kconfig: Kconfig
