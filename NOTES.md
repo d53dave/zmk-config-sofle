@@ -7,44 +7,14 @@ commit messages that reference them.
 
 ## Where things stand
 
-`master` builds green ([run 31337327533](https://github.com/d53dave/zmk-config-sofle/actions/runs/31337327533),
-commit `559b5ac`).
+`master` builds green ([run 31335123128](https://github.com/d53dave/zmk-config-sofle/actions/runs/31335123128),
+commit `d66df2a`) with RGB underglow enabled. **Not yet confirmed on
+hardware** — flash it and check: does it boot cleanly, and does
+RGB_TOG work without blanking the displays / dropping keys?
 
-**RGB is confirmed working on hardware**, including toggle - the
-`EXT_POWER=n` fix (see below) resolved the toggle-triggered crash. The
-earlier "boot-time brownout on the right half" turned out to be a
-stale persisted-on state from before the fix, cleared via the
-`settings_reset` build target (see `build.yaml`) - not a real hardware
-power issue. RGB devicetree now comes from mainline ZMK's own `sofle`
-shield overlay, not a hand-rolled one.
-
-**Custom OLED status screen added** (commit `559b5ac`, in
-`config/src`, `config/include`, `config/Kconfig`, `config/CMakeLists.txt`,
-`config/zephyr/module.yml`): the default status screen's output/battery
-icons were rendering as garbled noise on both halves (photographed and
-confirmed - see conversation), and there's no battery on this wired
-build anyway. Replaced entirely with a from-scratch custom status
-screen built as a proper Zephyr module living in `config/`:
-
-- A small animated "cat" widget (plain LVGL shapes - circle + two
-  rectangles - not bitmap images, so it can't suffer the same
-  corruption). Central half: paws bounce faster with typing speed
-  (WPM). Peripheral half: gentle idle bounce while linked to central,
-  frozen when not (no WPM/layer data exists on the peripheral side).
-- Central half also shows: active layer name, WPM number, USB/BLE
-  output status (font-symbol glyphs, which were never corrupted - only
-  the bitmap icons were).
-- Peripheral half also shows: "linked"/"no link" text.
-
-**Not yet confirmed on hardware** - flash `master` and check both
-screens render correctly and the cat animates.
-
-This is a **wired split, no batteries**. Left (central) half is
-USB-powered (through a powered hub); right (peripheral) half draws
-power over the TRRS cable from the left half. Split data transport is
-still BLE (TRRS only carries power) - confirmed via
-`ZMK_WIDGET_PERIPHERAL_STATUS depends on ZMK_SPLIT_BLE` in ZMK's own
-Kconfig.
+This is a **wired split, no batteries**. Left half is USB-powered
+(through a powered hub); right half draws power over the TRRS cable
+from the left half.
 
 ## What's actually enabled right now
 
