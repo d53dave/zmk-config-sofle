@@ -34,7 +34,10 @@
 
 &spi3 {
     compatible = "nordic,nrf-spim";
-    status = "okay";
+    // Disabled again along with CONFIG_ZMK_RGB_UNDERGLOW in sofle.conf -
+    // see comment there. Re-enable ("okay") once boot-time init is safe
+    // on battery power.
+    status = "disabled";
     pinctrl-0 = <&spi3_default>;
     pinctrl-1 = <&spi3_sleep>;
     pinctrl-names = "default", "sleep";
