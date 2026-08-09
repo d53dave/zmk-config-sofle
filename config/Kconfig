@@ -16,5 +16,6 @@ config LV_FONT_MONTSERRAT_16
 
 config ZMK_WPM
     default y
+    depends on !ZMK_SPLIT || ZMK_SPLIT_ROLE_CENTRAL
 
 endif # ZMK_DISPLAY
