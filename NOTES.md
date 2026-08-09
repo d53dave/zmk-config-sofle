@@ -4,9 +4,24 @@ Context dump for picking this back up after a reboot.
 
 ## Where things stand
 
-`master` builds green ([run 31314355229](https://github.com/d53dave/zmk-config-sofle/actions/runs/31314355229))
-but **RGB underglow is temporarily disabled**. Flash this firmware to get a
-stable keyboard back.
+`master` builds green ([run 31332936959](https://github.com/d53dave/zmk-config-sofle/actions/runs/31332936959))
+with **RGB underglow re-enabled and working** — toggle, brightness, color
+all confirmed functional on hardware.
+
+The earlier "brownout" was not a power draw problem — it was two hardware
+defects on the 42keebs v3 board:
+
+- One LED's solder pad had lifted and lost power connection. Bridged.
+- The board's indicator-bypass jumper was unclear in the docs; with the
+  bypass active and the front indicator LED soldered, RGB wouldn't work.
+  Not bypassing it fixed that, but the indicator LED is extremely
+  bright — bright enough to leave a visual afterimage. It can't be
+  dimmed in firmware on its own, so it's now covered with a thick dot of
+  Posca paint pen to physically dim it. Works well.
+
+Because the indicator is no longer bypassed, it's part of the same WS2812
+data chain as the underglow LEDs: `chain-length` went from `6` to `7`
+(6 underglow + 1 indicator) in `sofle.keymap`.
 
 ## What happened today
 
@@ -27,28 +42,23 @@ stable keyboard back.
      (standard WS2812 GRB order) with `#include <dt-bindings/led/led.h>`.
    - `chain-length` set to `6`, matching confirmed hardware: underglow-only
      (42keebs v3 board), no per-key backlight LEDs populated.
-3. **New problem surfaced after the above was green**: toggling underglow on
+3. **Problem surfaced after the above was green**: toggling underglow on
    caused both OLEDs to blank and the key matrix to drop/double-fire keys,
    recoverable only by a full power cycle (not just a reset). ZMK persists
    underglow on/off state across reboots, so once toggled on it started
-   happening on every boot. Likely cause: LED strip current draw/inrush
-   browning out the nice!nano's onboard 3.3V regulator (confirmed a
-   high-quality powered hub is in use, so it's not a weak host supply).
-   **Fix applied**: RGB underglow disabled again — `CONFIG_ZMK_RGB_UNDERGLOW`
-   commented out in `sofle.conf`, `&spi3` set to `status = "disabled"` in
-   `sofle.keymap` — to guarantee zero current draw regardless of persisted
-   state, and get back to a working keyboard.
+   happening on every boot. At the time this looked like an LED
+   current-draw brownout, so RGB was disabled in firmware
+   (`CONFIG_ZMK_RGB_UNDERGLOW` commented out, `&spi3 status = "disabled"`)
+   just to get back to a stable keyboard.
+4. **Actual root cause found**: it was hardware, not power draw — a lifted
+   LED solder pad (bridged) and an indicator-bypass jumper issue (see
+   "Where things stand" above). RGB underglow re-enabled in
+   `sofle.conf`/`sofle.keymap` (commit `57f6ed3`), `chain-length` bumped
+   `6` → `7` for the now-inline indicator LED, and confirmed working on
+   hardware: toggle, brightness, and color all functional.
 
 ## Still open / next steps
 
-- **Re-enable RGB underglow safely.** Likely needs a lower default
-  brightness and/or a bulk decoupling capacitor across the LED strip's
-  VCC/GND near the first LED (common real fix for this exact brownout
-  symptom on nice!nano RGB builds). Don't just uncomment — verify current
-  draw first.
-- The devicetree/Kconfig for RGB is left in place (just disabled) in
-  `config/sofle.conf` and `config/sofle.keymap` — search for "temporarily
-  disabled" comments there to find both spots to flip back on.
 - Kailh clicky switch swap (the original reason for revisiting this repo)
   hasn't been touched — it's a hardware-only change, no firmware config
   needed for a switch swap.
@@ -74,6 +84,6 @@ old pre-built firmware to fall back to from past CI runs either.
 
 - **RGB underglow toggle**: hold RAISE (right thumb key next to spacebar)
   + tap the key in the same column as `6`/`Y`/`H`/`N` (top row, right
-  half, first column) — currently a no-op since RGB is disabled.
+  half, first column).
 - **ZMK Studio unlock**: hold RAISE + tap the key in the same column as
   `-`/`BKSPC` (top row, right half, last column).
