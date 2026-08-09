@@ -34,9 +34,7 @@
 
 &spi3 {
     compatible = "nordic,nrf-spim";
-    // Disabled along with CONFIG_ZMK_RGB_UNDERGLOW in sofle.conf - see
-    // comment there. Re-enable ("okay") once the brownout is sorted.
-    status = "disabled";
+    status = "okay";
     pinctrl-0 = <&spi3_default>;
     pinctrl-1 = <&spi3_sleep>;
     pinctrl-names = "default", "sleep";
@@ -48,7 +46,10 @@
         frame-format = <0>;
         spi-one-frame = <0x70>;
         spi-zero-frame = <0x40>;
-        chain-length = <6>;
+        // 6 underglow LEDs + 1 front indicator LED, run un-bypassed
+        // (indicator dimmed with a marker dot instead of using the
+        // bypass jumper).
+        chain-length = <7>;
         color-mapping = <LED_COLOR_ID_GREEN LED_COLOR_ID_RED LED_COLOR_ID_BLUE>;
     };
 };
