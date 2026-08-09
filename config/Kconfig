@@ -1,0 +1,19 @@
+# Custom status screen, step 1 of an incremental rebuild: plain text
+# info only (layer/WPM/output on central, link status on peripheral).
+# No shapes, no timers, no animation yet - see NOTES.md for why this
+# is being done incrementally.
+
+if ZMK_DISPLAY
+
+choice ZMK_DISPLAY_STATUS_SCREEN
+    default ZMK_DISPLAY_STATUS_SCREEN_CUSTOM
+endchoice
+
+config LV_USE_LABEL
+    default y
+
+config ZMK_WPM
+    default y
+    depends on !ZMK_SPLIT || ZMK_SPLIT_ROLE_CENTRAL
+
+endif # ZMK_DISPLAY
