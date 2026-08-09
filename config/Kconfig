@@ -1,0 +1,20 @@
+# Custom status screen: bongo-cat-style widget (plain LVGL shapes, no
+# bitmap images, to avoid the default status screen's icon rendering
+# issues) plus text info. See src/status_screen.c.
+
+if ZMK_DISPLAY
+
+choice ZMK_DISPLAY_STATUS_SCREEN
+    default ZMK_DISPLAY_STATUS_SCREEN_CUSTOM
+endchoice
+
+config LV_USE_LABEL
+    default y
+
+config LV_FONT_MONTSERRAT_16
+    default y
+
+config ZMK_WPM
+    default y
+
+endif # ZMK_DISPLAY
