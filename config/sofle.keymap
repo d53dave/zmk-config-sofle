@@ -34,7 +34,9 @@
 
 &spi3 {
     compatible = "nordic,nrf-spim";
-    status = "okay";
+    // Disabled along with CONFIG_ZMK_RGB_UNDERGLOW in sofle.conf - see
+    // comment there. Re-enable ("okay") once the brownout is sorted.
+    status = "disabled";
     pinctrl-0 = <&spi3_default>;
     pinctrl-1 = <&spi3_sleep>;
     pinctrl-names = "default", "sleep";
