@@ -20,11 +20,12 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #include <zmk/rgb_underglow.h>
 
 /* Index = layer number (default_layer=0, lower_layer=1, raise_layer=2
- * in sofle.keymap). */
+ * in sofle.keymap). Default matches the purple already bound to
+ * &rgb_ug RGB_COLOR_HSB(292,71,51) in raise_layer. */
 static const struct zmk_led_hsb layer_colors[] = {
-    {.h = 190, .s = 60, .b = 30}, /* 0: default - teal */
+    {.h = 292, .s = 71, .b = 51}, /* 0: default - purple */
     {.h = 30, .s = 90, .b = 35},  /* 1: lower - amber */
-    {.h = 280, .s = 70, .b = 35}, /* 2: raise - violet */
+    {.h = 190, .s = 60, .b = 30}, /* 2: raise - teal */
 };
 
 static int rgb_layer_color_listener_cb(const zmk_event_t *eh) {
