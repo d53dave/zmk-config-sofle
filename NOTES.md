@@ -4,24 +4,35 @@ Context dump for picking this back up after a reboot.
 
 ## Where things stand
 
-`master` builds green ([run 31332936959](https://github.com/d53dave/zmk-config-sofle/actions/runs/31332936959))
-with **RGB underglow re-enabled and working** — toggle, brightness, color
-all confirmed functional on hardware.
+`master` builds green ([run 31333820887](https://github.com/d53dave/zmk-config-sofle/actions/runs/31333820887))
+with **RGB underglow re-enabled**. Brightness and color are confirmed
+working on hardware. RGB_TOG was still crashing as of commit `57f6ed3`
+(see below) — a fix is in commit `57f24b2`, pending flash/confirm.
 
-The earlier "brownout" was not a power draw problem — it was two hardware
-defects on the 42keebs v3 board:
+Two separate things were going on, and they got conflated as one
+"brownout" during earlier diagnosis:
 
-- One LED's solder pad had lifted and lost power connection. Bridged.
-- The board's indicator-bypass jumper was unclear in the docs; with the
-  bypass active and the front indicator LED soldered, RGB wouldn't work.
-  Not bypassing it fixed that, but the indicator LED is extremely
-  bright — bright enough to leave a visual afterimage. It can't be
-  dimmed in firmware on its own, so it's now covered with a thick dot of
-  Posca paint pen to physically dim it. Works well.
-
-Because the indicator is no longer bypassed, it's part of the same WS2812
-data chain as the underglow LEDs: `chain-length` went from `6` to `7`
-(6 underglow + 1 indicator) in `sofle.keymap`.
+1. **Hardware defects** (42keebs v3 board): one LED's solder pad had
+   lifted and lost power connection (bridged), and the board's
+   indicator-bypass jumper was unclear in the docs — with the bypass
+   active and the front indicator LED soldered, RGB wouldn't work at
+   all. Not bypassing it fixed that, but the indicator LED is extremely
+   bright — bright enough to leave a visual afterimage — and can't be
+   dimmed in firmware on its own, so it's now covered with a thick dot
+   of Posca paint pen to physically dim it. Works well. Because the
+   indicator is no longer bypassed, it's part of the same WS2812 data
+   chain as the underglow LEDs: `chain-length` went from `6` to `7`
+   (6 underglow + 1 indicator) in `sofle.keymap`.
+2. **The real cause of the toggle-specific crash** (screens blank, keys
+   drop/double-fire, only a power cycle recovers): `sofle.conf` had
+   `CONFIG_ZMK_RGB_UNDERGLOW_EXT_POWER=y`, which makes `RGB_TOG` also
+   toggle `ext_power` off — and `ext_power` apparently feeds the
+   displays (and glitches the matrix on the transition). This explains
+   why brightness/color changes were always fine and only the toggle
+   broke things. The old `infused-kim` fork config already had this set
+   to `n` with a comment describing this exact symptom — missed when
+   reconstructing the RGB config from scratch for the mainline
+   migration. Fixed in commit `57f24b2`.
 
 ## What happened today
 
@@ -50,12 +61,15 @@ data chain as the underglow LEDs: `chain-length` went from `6` to `7`
    current-draw brownout, so RGB was disabled in firmware
    (`CONFIG_ZMK_RGB_UNDERGLOW` commented out, `&spi3 status = "disabled"`)
    just to get back to a stable keyboard.
-4. **Actual root cause found**: it was hardware, not power draw — a lifted
-   LED solder pad (bridged) and an indicator-bypass jumper issue (see
-   "Where things stand" above). RGB underglow re-enabled in
-   `sofle.conf`/`sofle.keymap` (commit `57f6ed3`), `chain-length` bumped
-   `6` → `7` for the now-inline indicator LED, and confirmed working on
-   hardware: toggle, brightness, and color all functional.
+4. **Hardware root cause found and fixed**: a lifted LED solder pad
+   (bridged) and an indicator-bypass jumper issue (see "Where things
+   stand" above). RGB underglow re-enabled in `sofle.conf`/`sofle.keymap`
+   (commit `57f6ed3`), `chain-length` bumped `6` → `7` for the now-inline
+   indicator LED. Brightness/color confirmed working, but RGB_TOG itself
+   still crashed the same way.
+5. **Toggle-specific root cause found**: `CONFIG_ZMK_RGB_UNDERGLOW_EXT_POWER=y`
+   coupling `RGB_TOG` to `ext_power` (see "Where things stand" above).
+   Set to `n` in commit `57f24b2`. Pending flash/confirm.
 
 ## Still open / next steps
 
