@@ -16,7 +16,7 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #include <zmk/display.h>
 #include <zmk/event_manager.h>
 
-#include "cat.h"
+#include "widgets/cat.h"
 
 #define CAT_W 34
 #define CAT_H 32

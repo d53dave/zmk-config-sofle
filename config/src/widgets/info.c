@@ -30,7 +30,7 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #include <zmk/events/ble_active_profile_changed.h>
 #endif
 
-#include "info.h"
+#include "widgets/info.h"
 
 static lv_obj_t *layer_label;
 static lv_obj_t *wpm_label;
