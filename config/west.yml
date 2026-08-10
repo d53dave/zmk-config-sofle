@@ -2,10 +2,27 @@ manifest:
   remotes:
     - name: zmkfirmware
       url-base: https://github.com/zmkfirmware
+    - name: mctechnology17
+      url-base: https://github.com/mctechnology17
   projects:
+    # PINNED, deliberately. zmk-nice-oled is written against LVGL 8 and is
+    # tested only against ZMK v0.3.0. ZMK's Zephyr 4.1 update (upstream
+    # 2025-12-09) brought LVGL 9.3, which deletes the entire canvas
+    # immediate-mode draw API that module is built on - ~61 call sites of
+    # lv_canvas_draw_text/img/rect/line, plus the lv_img_* -> lv_image_*
+    # rename and new stride/magic fields on image descriptors. It does not
+    # compile against `main` and no fork has ported it: as of 2026-08-10
+    # every actively-pushed fork changes only artwork (logos, sprites,
+    # animation options), none touch the LVGL API.
+    #
+    # So this branch trades current ZMK for working nice!oled widgets.
+    # Do not bump this to `main` without doing that port first.
     - name: zmk
       remote: zmkfirmware
-      revision: main
+      revision: v0.3.0
       import: app/west.yml
+    - name: zmk-nice-oled
+      remote: mctechnology17
+      revision: main
   self:
     path: config

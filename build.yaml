@@ -1,33 +1,26 @@
+# NOTE: board is nice_nano_v2, not nice_nano//zmk as on master.
+# ZMK v0.3.0 predates HWMv2 - boards there still live at
+# app/boards/arm/nice_nano/ with the old flat naming. The `//zmk`
+# variant suffix only exists on post-Zephyr-4.1 ZMK.
+#
+# The sofle shield at v0.3.0 ships boards/nice_nano_v2.overlay, which
+# carries the same RGB underglow wiring (spi3, led_strip, chosen
+# zmk,underglow) that main's nice_nano_nrf52840_zmk.overlay does - so
+# underglow still works here without hand-rolling an overlay back in.
 include:
-  - board: nice_nano//zmk
-    shield: sofle_left
+  - board: nice_nano_v2
+    shield: sofle_left nice_oled
     snippet: studio-rpc-usb-uart
     cmake-args: -DCONFIG_ZMK_STUDIO=y
-  - board: nice_nano//zmk
-    shield: sofle_right
+  - board: nice_nano_v2
+    shield: sofle_right nice_oled
   # Erases the settings/NVS partition (persisted RGB state, BLE bonds,
   # etc). Flash this to a half, wait for it to boot once, then reflash
   # normal firmware to that half. Same image for both halves.
-  - board: nice_nano//zmk
+  - board: nice_nano_v2
     shield: settings_reset
-  # Diagnostic only: forces the custom status screen (config/src/status_screen.c)
-  # on, which crashes hardware (see NOTES.md), plus zmk-usb-logging to
-  # route the console over USB serial so the actual crash/fault output
-  # can be captured instead of guessing from symptoms. Flash to the LEFT
-  # half only, temporarily, with a serial terminal already connected and
-  # capturing before it boots, then reflash normal sofle_left firmware
-  # afterwards.
-  - board: nice_nano//zmk
-    shield: sofle_left
-    snippet: zmk-usb-logging
-    cmake-args: -DCONFIG_ZMK_DISPLAY_STATUS_SCREEN_CUSTOM=y
-    artifact-name: sofle_left_debug_usb_logging
-  # Isolates whether zmk-usb-logging itself is the problem, independent
-  # of the custom screen: same snippet, but the built-in status screen
-  # (no -DCONFIG_ZMK_DISPLAY_STATUS_SCREEN_CUSTOM=y). If USB still
-  # doesn't enumerate with this one, the snippet/board combo is broken
-  # on its own; if it does, the custom screen crash is killing USB too.
-  - board: nice_nano//zmk
-    shield: sofle_left
-    snippet: zmk-usb-logging
-    artifact-name: sofle_left_debug_usb_logging_builtin_screen
+
+# The two zmk-usb-logging diagnostic variants from master are omitted
+# here on purpose. They existed to capture the crash from our own
+# config/src/status_screen.c, which this branch doesn't build at all -
+# nice!oled supplies the custom status screen instead.
