@@ -4,8 +4,10 @@ Context dump for picking this back up.
 
 ## Where things stand
 
-`master` builds green ([run 31338583910](https://github.com/d53dave/zmk-config-sofle/actions/runs/31338583910),
-commit `1df41a0`). Confirmed working on hardware:
+`master` builds green ([run 31381150680](https://github.com/d53dave/zmk-config-sofle/actions/runs/31381150680),
+commit `8a02cc4`). Both halves reflashed and confirmed working after the
+artifact-collision mixup (right needed a `settings_reset` cycle first,
+left didn't). Confirmed working on hardware:
 
 - RGB underglow: on, toggle, brightness, color all work. Devicetree
   comes from mainline ZMK's own `sofle` shield overlay (not hand-
