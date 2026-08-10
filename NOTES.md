@@ -262,20 +262,43 @@ Real lead, confirmed from ZMK's own source
   smaller glyph set - just `LV_SYMBOL_WIFI` + `LV_SYMBOL_OK`/`LV_SYMBOL_CLOSE`
   (confirmed by reading both widgets' source). No `LV_SYMBOL_USB` or
   `LV_SYMBOL_SETTINGS` on the peripheral side, ever.
-- So "only left is broken" doesn't require a per-half hardware
-  difference at all - the two halves render genuinely different glyphs
-  from the same font, because they run different widgets. The likely
-  culprit is one specific glyph unique to `output_status.c`, most likely
-  `LV_SYMBOL_USB` (if this keyboard connects to the host over USB rather
-  than BLE) or `LV_SYMBOL_SETTINGS`.
-- Searched ZMK's and LVGL's GitHub issues for a known report of this -
-  no direct hit yet, so likely specific to this project's exact
-  font/Kconfig combo rather than a widely-hit upstream bug.
+- Host transport confirmed USB (not BLE) - so on the left, `output_status.c`
+  renders `LV_SYMBOL_USB` alone when connected (no `LV_SYMBOL_CLOSE`
+  appended in that case). Narrows the left's broken icon to that glyph.
+- **Broader than just output_status**: user later confirmed *three*
+  separate icon-bearing spots are broken, not just the USB icon -
+  `layer_status.c` prepends `LV_SYMBOL_KEYBOARD` to the layer number
+  (confirmed from source), and the battery widget (`LV_SYMBOL_BATTERY_*`
+  / `LV_SYMBOL_CHARGE`) is also affected, sitting near WPM in the
+  corner. All three are icon-bearing widgets using the `LV_SYMBOL_*`
+  private-use-area glyph range; the plain digit/ASCII text next to each
+  one is fine. Points at the whole symbol-glyph range being broken in
+  this project's compiled font, not one specific icon.
+- No physical battery is fitted (cable-only build) - the battery
+  widget's "full" vs "empty" reading differing between halves is just
+  noise from a floating/disconnected ADC pin, not a real bug. Not worth
+  chasing, and it's already excluded from the custom-screen redesign
+  (see "In progress" section above).
+- Searched ZMK's and LVGL's GitHub issues/forum for a known report of
+  this - no exact match. Found ZMK's own docs do note
+  `CONFIG_ZMK_DISPLAY_INVERT` "might not work as expected with custom
+  status screens that utilize images" - i.e. ZMK's own docs acknowledge
+  inconsistent invert behavior across content types, which was the
+  motivating theory for the test below.
+- **Tried `CONFIG_ZMK_DISPLAY_INVERT=y` - didn't work, reverted.**
+  Zero-risk test (built-in screen only, no custom-screen code involved).
+  Result: inverted the **whole screen** globally rather than fixing
+  icons selectively - WPM text (previously legible) became hard to
+  read, and the icons were still not legible either. Net negative,
+  reverted. Rules out a simple global-polarity-mismatch explanation;
+  whatever's wrong with the symbol glyphs specifically isn't fixed by
+  this flag.
 
-**Next step**: confirm which host transport this keyboard actually uses
-(USB vs BLE) to narrow down which specific glyph in `output_status.c` is
-rendering, then test that glyph in isolation (e.g. a minimal LVGL label
-showing just that one symbol) to confirm/deny it's the corrupted one.
+**Next step**: no further built-in-screen leads right now. This is now
+lower priority than the custom-screen crash investigation (see below) -
+the custom screen replaces these widgets with plain-text ones anyway
+(deliberately avoiding `LV_SYMBOL_*`), so finishing that work sidesteps
+this bug entirely rather than requiring it to be root-caused.
 
 ## Still open / next steps
 
