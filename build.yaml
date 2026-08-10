@@ -31,12 +31,3 @@ include:
     shield: sofle_left
     snippet: zmk-usb-logging
     artifact-name: sofle_left_debug_usb_logging_builtin_screen
-  # Verification only, not for flashing: forcing CONFIG_ZMK_SPLIT_BLE=n to
-  # check what happens when BLE split is disabled on the current
-  # mainline-sofle-shield devicetree (which has no wired-split devicetree
-  # node as far as I can tell from source). Just checking the Kconfig/DT
-  # output and whether it builds at all - see NOTES.md.
-  - board: nice_nano//zmk
-    shield: sofle_left
-    cmake-args: -DCONFIG_ZMK_SPLIT_BLE=n
-    artifact-name: sofle_left_no_ble_split_check

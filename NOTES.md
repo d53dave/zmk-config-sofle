@@ -26,10 +26,25 @@ hardware:
 
 ## Operational note: reflashing one half can require resetting both
 
-Split communication between the halves is still BLE-based even though
-power is wired via TRRS (see top of this file / repo context - no
-batteries fitted, but BLE is still used for split data transport). The
-two halves maintain a BLE bond with each other. Confirmed twice now:
+Split communication between the halves is BLE-based, **confirmed by a
+physical test**: removed the TRRS cable entirely, powered the right half
+from a separate external battery instead - the halves still talked to
+each other fine. TRRS carries power only, not data (also consistent
+with the compiled Kconfig: `CONFIG_ZMK_SPLIT_BLE=y`,
+`CONFIG_ZMK_SPLIT_ROLE_CENTRAL=y`, no wired-split code compiled in - see
+below). It's imperceptibly fast because it's a bonded reconnect (no
+discovery/pairing), at the tightest connection interval BLE allows
+(`CONFIG_ZMK_SPLIT_BLE_PREF_INT=6` = 7.5ms) with latency-skipping only
+when idle, not when there's an actual keypress to send.
+
+(Earlier in this session I considered whether ZMK's newer `wired-split`
+feature could apply here instead, since Sofle boards traditionally do
+carry a real serial data pin over TRRS for QMK-style split - worth
+knowing that capability exists if a genuinely wired, radio-free split is
+wanted later, but it's moot for *this* board: confirmed above that the
+current TRRS wiring is power-only.)
+
+The two halves maintain a BLE bond with each other. Confirmed twice now:
 after flashing broken/crashed firmware to one half (left) and then
 reflashing known-good firmware, **both halves needed a `settings_reset`
 cycle to recover, including the right half which never had its firmware
