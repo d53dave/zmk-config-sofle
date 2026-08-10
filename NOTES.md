@@ -15,10 +15,11 @@ commit `1df41a0`). Confirmed working on hardware:
   5x the previous 5 min default).
 - Display: back to ZMK's **built-in** status screen (not custom). Has
   a known cosmetic bug - see TODO below - but boots and works.
-- **New**: underglow color now changes based on the active layer
-  (`config/src/rgb_layer_color.c`) - teal (default) / amber (lower) /
-  violet (raise). Plain event listener calling the existing
-  `zmk_rgb_underglow_set_hsb()` API, no display/LVGL involved.
+- Underglow color changes based on the active layer
+  (`config/src/rgb_layer_color.c`) - purple (default) / amber (lower) /
+  teal (raise), matching the purple already used elsewhere in the keymap.
+  Plain event listener calling the existing `zmk_rgb_underglow_set_hsb()`
+  API, no display/LVGL involved.
 
 ## TODO: custom OLED status screen (paused, twice crashed on hardware)
 
@@ -60,45 +61,38 @@ crashed on real hardware in the same way:
   (built-in screen's C code, unmodified, just recompiled as "custom")
   reproduces it.
 
-## Experiment: zmk-nice-oled (in progress)
+## Tried and abandoned: zmk-nice-oled module
 
-Trying [mctechnology17/zmk-nice-oled](https://github.com/mctechnology17/zmk-nice-oled)
-(`nice_oled` shield) instead of hand-rolling the custom status screen again.
-It targets the exact display this board has (SSD1306 128x32 I2C) and its
-`nice_oled.overlay` is empty - it relies on the base `sofle` shield's own
-`oled` devicetree node, same as today, so no devicetree conflict.
+Tried [mctechnology17/zmk-nice-oled](https://github.com/mctechnology17/zmk-nice-oled)
+(`nice_oled` shield) instead of hand-rolling the custom status screen
+again. Targets the exact display this board has (SSD1306 128x32 I2C), no
+devicetree conflict with the base `sofle` shield. Didn't pan out - dead
+end, but worth recording why so it isn't retried blindly:
 
-Important caveat: its `zmk_display_status_screen()` override uses the same
-`CONFIG_ZMK_DISPLAY_STATUS_SCREEN_CUSTOM` weak-symbol mechanism that
-crashed twice before (see TODO below) - so this isn't guaranteed to avoid
-that crash, but it doubles as a test of whether the crash was in the
-hand-rolled widget code specifically or something more fundamental. Also
-worth noting its "static image" mode still renders through a canvas +
-`lv_img`/buffer-rotation pipeline (`screen_peripheral.c`), not the truly
-minimal `lv_obj_create(NULL)`-only test originally suggested - it's a
-different, heavier code path than anything tried on this board before.
-
-Added as **new** build targets (`sofle_left nice_oled` / `sofle_right
-nice_oled`) alongside the existing plain ones in `build.yaml`, so the
-known-working firmware is still available to reflash if this crashes.
-Config kept deliberately minimal for the first test
-(`config/nice_oled.conf`): static "vim" image on the peripheral (no
-animation), just the layer widget on central, no RAW HID.
-
-**Update**: first CI run failed - confirmed real LVGL API drift, not a
-config mistake (`LV_IMG_CF_INDEXED_1BIT` undeclared, `lv_draw_img_dsc_t`
-renamed to `lv_draw_image_dsc_t`, etc. - this module's generated image
-assets were built against the older LVGL bundled with ZMK `v0.3.0`, and
-`main` has since moved on). Checked: `v0.3.0` (tagged 2025-08-01) is
-actually the *newest* official ZMK release - `main` is 184 commits ahead
-but none of those have ever been cut into a tagged release, and Studio
-(`studio-rpc-usb-uart` snippet + `app/src/studio`) is already present at
-`v0.3.0`, so pinning isn't a feature downgrade. Pinned `config/west.yml`'s
-ZMK revision to `v0.3.0` repo-wide (also closes the pre-existing TODO
-below about not tracking `main` forever). This affects every build
-target, not just the nice_oled experiment, so **everything needs
-re-flashing and re-verifying on hardware** after this, not just the
-display.
+- Against ZMK `main`: fails to build. The module's generated image assets
+  use the older pre-LVGL-v9 API (`LV_IMG_CF_INDEXED_1BIT`,
+  `lv_draw_img_dsc_t`, `LV_IMG_CF_TRUE_COLOR`) which `main`'s current LVGL
+  has renamed/removed. It was built against ZMK `v0.3.0`'s older LVGL.
+- Tried pinning `west.yml` to `v0.3.0` to match (confirmed `v0.3.0`,
+  tagged 2025-08-01, is actually ZMK's *newest tagged release* - `main` is
+  184 unreleased commits ahead - and Studio support already exists at
+  that tag, so this wasn't a feature downgrade). **This broke every other
+  build too**: `nice_nano//zmk` board-variant syntax needs Zephyr's board
+  metadata `qualifiers` field, which didn't exist yet in the Zephyr
+  version `v0.3.0` pins (`//zmk` board variants were only added to ZMK in
+  Dec 2025 - see https://zmk.dev/blog/2025/12/09/zephyr-4-1#zmk-board-variant,
+  four months after `v0.3.0`). Build failed with `KeyError: 'qualifiers'`
+  before compiling anything, on *all* targets including the previously
+  green sofle_left/sofle_right/settings_reset.
+- **Reverted everything**: `west.yml` back to `revision: main`,
+  `build.yaml`'s nice_oled targets and `config/nice_oled.conf` removed.
+  Confirmed CI green again on `main` before moving on (see run history).
+- Bottom line: `nice_oled` needs an LVGL version incompatible with the
+  board-variant setup this repo currently needs to build at all. Not
+  worth pursuing further unless the module gets updated for LVGL v9, or
+  a much older/different board-definition approach is adopted (not
+  recommended - would give up the `//zmk` variant this repo's Studio
+  support depends on).
 
 Also open: separately from this module, the *built-in* status screen's
 icons (battery/output symbol glyphs specifically, not the layer/WPM text)
@@ -109,15 +103,18 @@ or its wiring, not firmware - not yet root-caused.
 
 ## Still open / next steps
 
-- OLED custom status screen - see TODO above.
-- Tune the per-layer RGB colors in `config/src/rgb_layer_color.c` to
-  taste (currently arbitrary: teal/amber/violet).
+- OLED custom status screen - see TODO above. `zmk-nice-oled` was tried
+  and doesn't work here - see "Tried and abandoned" above.
+- Left-half-only garbled icon glyphs on the built-in status screen - not
+  root-caused, see note above (physical/left-half-specific, not RGB).
+- Tune the per-layer RGB colors in `config/src/rgb_layer_color.c` further
+  to taste if purple/amber/teal isn't quite right.
 - Kailh clicky switch swap (the original reason for revisiting this
   repo) hasn't been touched — hardware-only, no firmware config needed.
-- Consider pinning `west.yml`'s `revision: main` to a tagged ZMK
-  release instead of tracking `main`, so future CI runs don't silently
-  break on upstream changes the way the `//zmk` board-variant migration
-  did earlier this session.
+- Pinning `west.yml` off of `main` isn't currently viable: tried, and
+  even the newest tagged ZMK release (`v0.3.0`) predates the `//zmk`
+  board-variant support this repo's build depends on. Tracking `main`
+  remains the only option unless the board-variant approach changes.
 
 ## Fallback branch: not usable (as CI)
 

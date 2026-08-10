@@ -2,17 +2,10 @@ manifest:
   remotes:
     - name: zmkfirmware
       url-base: https://github.com/zmkfirmware
-    # zmk-nice-oled: custom OLED status screen module (nice_oled shield),
-    # https://github.com/mctechnology17/zmk-nice-oled
-    - name: mctechnology17
-      url-base: https://github.com/mctechnology17
   projects:
     - name: zmk
       remote: zmkfirmware
-      revision: v0.3.0
-      import: app/west.yml
-    - name: zmk-nice-oled
-      remote: mctechnology17
       revision: main
+      import: app/west.yml
   self:
     path: config
