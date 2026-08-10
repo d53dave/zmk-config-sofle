@@ -10,3 +10,14 @@ include:
   # normal firmware to that half. Same image for both halves.
   - board: nice_nano//zmk
     shield: settings_reset
+  # Diagnostic only: forces the custom status screen (config/src/status_screen.c)
+  # on, which crashes hardware (see NOTES.md), plus zmk-usb-logging to
+  # route the console over USB serial so the actual crash/fault output
+  # can be captured instead of guessing from symptoms. Flash to the LEFT
+  # half only, temporarily, with a serial terminal already connected and
+  # capturing before it boots, then reflash normal sofle_left firmware
+  # afterwards.
+  - board: nice_nano//zmk
+    shield: sofle_left
+    snippet: zmk-usb-logging
+    cmake-args: -DCONFIG_ZMK_DISPLAY_STATUS_SCREEN_CUSTOM=y

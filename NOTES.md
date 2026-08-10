@@ -51,16 +51,44 @@ test rather than jumping to the full design:
   and the known-good built-in-screen look is dark bg + light text, the
   opposite of a white *background fill*) rather than anything wrong with
   rendering itself.
-- **Step 0b (current)**: swapped the bg-fill approach for a single static
-  text label (`lv_label_create`, default theme styling, no bg color
-  override) - reuses the exact rendering primitive already proven
-  correct by the built-in screen's text, sidesteps the color-polarity
-  guessing. Still fully static, no events/timers. **Not yet
-  hardware-tested.**
-- Step 1 (next, if step 0b renders legibly): left-side WPM + layer text
-  widgets (dynamic, event-driven).
-- Step 2: right-side connection indicator text widget.
-- Step 3: static bitmaps once steps 1-2 are confirmed stable.
+- **Step 0b - FAILED, reverted**: swapped the bg-fill approach for a
+  single static text label (`lv_label_create`, default theme styling, no
+  bg color override, no events/timers). Also needed
+  `CONFIG_LV_USE_LABEL=y` added explicitly to `sofle.conf` first - the
+  peripheral build failed to link (`undefined reference to
+  lv_label_create`) without it, since that symbol was only being pulled
+  in via `CONFIG_ZMK_WIDGET_WPM_STATUS`'s `select`, which is
+  central-only (fixed, harmless, stays either way). With that fixed and
+  flashed: **crashed hardware** - keyboard non-functional on both
+  halves. Left showed "mostly white with black static" (not the
+  legible label text). Right showed white with *faint ghosted
+  battery/wifi icons* - stale content from the old built-in screen
+  bleeding through, meaning the new screen wasn't cleanly flushing/
+  redrawing there either. Reverted `config/Kconfig`'s choice override
+  (commented out) back to the built-in screen to restore a working
+  keyboard; `config/src/status_screen.c` left in place (unused while
+  the choice is off) for reference.
+- **This is the tightest isolation of the mystery crash so far**: the
+  *only* difference between working step 0 and crashing step 0b is one
+  static `lv_label_create` call. Not shapes, not timers, not events -
+  just a label. Given the built-in screen's own labels/text otherwise
+  render fine (aside from the separate icon-glyph-noise bug below),
+  something about *our* label specifically - or the interaction between
+  `CONFIG_LV_USE_LABEL` being newly enabled and something else in this
+  build - is implicated. Not guessing further without real signal.
+- **Next: get actual diagnostic signal.** Added a diagnostic-only
+  `build.yaml` target (`sofle_left` + `zmk-usb-logging` snippet +
+  `-DCONFIG_ZMK_DISPLAY_STATUS_SCREEN_CUSTOM=y`) that forces the
+  crashing custom screen on and routes the console over USB serial, so
+  the actual fault/crash output can be captured (register dump, stack
+  trace, assert message) instead of inferring from symptoms. Flash to
+  the **left half only**, with a serial terminal already connected and
+  capturing *before* it boots (crash likely happens at/near boot).
+  Reflash normal `sofle_left` firmware afterwards - this build is
+  diagnostic-only, not meant to be run normally.
+- Step 1 (WPM + layer text widgets) and beyond are on hold until this
+  crash is actually root-caused - no point building more on top of a
+  foundation that crashes on one label.
 
 ### History: two earlier attempts, both crashed (paused as of this restart)
 
