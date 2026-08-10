@@ -1,19 +1,20 @@
 /*
- * Custom status screen - step 0 (mechanism test).
+ * Custom status screen - step 0b (static label test).
  *
- * Solid fill, no widgets, no labels, no events, no timers. The last two
- * custom status screen attempts (see NOTES.md) both crashed hardware
- * identically (keyboard input dead, display showing static noise), and
- * that was never root-caused - even a text-labels-only version crashed
- * the same way. This step tests just the override mechanism itself
- * (config/zephyr/module.yml + CMakeLists.txt + Kconfig +
- * zmk_display_status_screen() weak-symbol override) in isolation, before
- * adding any widget content back in.
+ * Step 0 (solid white background fill, no content) confirmed the
+ * override mechanism itself is safe on this hardware - keyboard stayed
+ * functional. But the screen came out blank/black instead of the
+ * expected lit white, most likely a color-polarity thing (this display's
+ * devicetree has `inversion-on` set, and the known-working built-in
+ * screen look is dark background + light text, the opposite of what a
+ * white *background fill* would need).
  *
- * A solid white fill is deliberately used instead of black/off, so a
- * successful boot is visually unambiguous: fully-lit screen means this
- * step worked, blank/dark means something didn't initialize, static
- * noise means the same crash as before.
+ * Rather than guess at colors again, this step drops the background fill
+ * and uses a single static text label instead - the same rendering
+ * primitive the built-in screen's text already renders correctly with,
+ * using default (theme-provided) styling instead of overriding colors.
+ * Still no events/timers/dynamic data - this is also the first real
+ * piece of step 1 (left-side text widgets).
  */
 
 #include <lvgl.h>
@@ -21,8 +22,9 @@
 lv_obj_t *zmk_display_status_screen(void) {
     lv_obj_t *screen = lv_obj_create(NULL);
 
-    lv_obj_set_style_bg_color(screen, lv_color_white(), LV_PART_MAIN);
-    lv_obj_set_style_bg_opa(screen, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_t *label = lv_label_create(screen);
+    lv_label_set_text(label, "status screen ok");
+    lv_obj_center(label);
 
     return screen;
 }

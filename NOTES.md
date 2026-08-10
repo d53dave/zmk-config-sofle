@@ -39,15 +39,26 @@ crashed hardware (dead keyboard input, static-noise display) and the
 cause was never isolated, so this restart starts from a mechanism-only
 test rather than jumping to the full design:
 
-- **Step 0 (current)**: `config/src/status_screen.c` - `lv_obj_create(NULL)`
-  + solid white fill, zero widgets/labels/events. Tests only the override
-  wiring (`zephyr/module.yml` + `CMakeLists.txt` + `Kconfig`'s
+- **Step 0 - PASSED**: `lv_obj_create(NULL)` + solid white bg fill, zero
+  widgets/labels/events. Flashed on hardware: **keyboard stayed fully
+  functional** - the override mechanism itself
+  (`zephyr/module.yml` + `CMakeLists.txt` + `Kconfig`'s
   `choice ZMK_DISPLAY_STATUS_SCREEN default ZMK_DISPLAY_STATUS_SCREEN_CUSTOM`
-  + the weak-symbol `zmk_display_status_screen()`), independent of any
-  content. White fill chosen so success is visually unambiguous: lit
-  screen = mechanism is fine, blank/dark = didn't init, static noise =
-  same crash as before. **Not yet hardware-tested.**
-- Step 1 (next, if step 0 passes): left-side WPM + layer text widgets.
+  + the weak-symbol `zmk_display_status_screen()`) is safe on this
+  hardware. This was the real unknown from the two earlier crashes -
+  resolved. Screen came out blank/black instead of the intended lit
+  white though - likely color-polarity (devicetree has `inversion-on`,
+  and the known-good built-in-screen look is dark bg + light text, the
+  opposite of a white *background fill*) rather than anything wrong with
+  rendering itself.
+- **Step 0b (current)**: swapped the bg-fill approach for a single static
+  text label (`lv_label_create`, default theme styling, no bg color
+  override) - reuses the exact rendering primitive already proven
+  correct by the built-in screen's text, sidesteps the color-polarity
+  guessing. Still fully static, no events/timers. **Not yet
+  hardware-tested.**
+- Step 1 (next, if step 0b renders legibly): left-side WPM + layer text
+  widgets (dynamic, event-driven).
 - Step 2: right-side connection indicator text widget.
 - Step 3: static bitmaps once steps 1-2 are confirmed stable.
 
