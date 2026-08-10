@@ -1,4 +1,9 @@
-# Placeholder - config/zephyr/module.yml points here even though there
-# are currently no custom Kconfig options to define. The per-layer RGB
-# color feature (config/src/rgb_layer_color.c) only needs
-# CONFIG_ZMK_RGB_UNDERGLOW, already set in sofle.conf.
+# config/zephyr/module.yml points here. The per-layer RGB color feature
+# (config/src/rgb_layer_color.c) only needs CONFIG_ZMK_RGB_UNDERGLOW,
+# already set in sofle.conf - nothing to define for it here.
+
+# Custom status screen (config/src/status_screen.c). Re-opens ZMK's own
+# choice to default to the custom screen instead of the built-in one.
+choice ZMK_DISPLAY_STATUS_SCREEN
+    default ZMK_DISPLAY_STATUS_SCREEN_CUSTOM
+endchoice

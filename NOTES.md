@@ -21,12 +21,40 @@ commit `1df41a0`). Confirmed working on hardware:
   Plain event listener calling the existing `zmk_rgb_underglow_set_hsb()`
   API, no display/LVGL involved.
 
-## TODO: custom OLED status screen (paused, twice crashed on hardware)
+## In progress: custom OLED status screen, take 3
 
-Wanted: replace the built-in status screen's icons (which render as
-garbled static/noise on both halves - photographed and confirmed) with
-custom text + a small animated "cat" widget. Attempted twice, both
-crashed on real hardware in the same way:
+Target design (no battery widget - this is a cable-only build, no
+battery fitted):
+- **Left (central)**: WPM indicator, layer indicator, static bitmap (TBD).
+- **Right (peripheral)**: connection indicator, static bitmap (TBD).
+
+Plain text/digits only for the indicators - deliberately avoiding
+`LV_SYMBOL_*` icon glyphs this time, since those are the ones confirmed
+broken in the built-in screen (see TODO below). Bitmaps come last, after
+the text-based widgets are confirmed stable - most new risk (image
+asset + decoder), most sequenced.
+
+Going incrementally given the history below - two earlier attempts both
+crashed hardware (dead keyboard input, static-noise display) and the
+cause was never isolated, so this restart starts from a mechanism-only
+test rather than jumping to the full design:
+
+- **Step 0 (current)**: `config/src/status_screen.c` - `lv_obj_create(NULL)`
+  + solid white fill, zero widgets/labels/events. Tests only the override
+  wiring (`zephyr/module.yml` + `CMakeLists.txt` + `Kconfig`'s
+  `choice ZMK_DISPLAY_STATUS_SCREEN default ZMK_DISPLAY_STATUS_SCREEN_CUSTOM`
+  + the weak-symbol `zmk_display_status_screen()`), independent of any
+  content. White fill chosen so success is visually unambiguous: lit
+  screen = mechanism is fine, blank/dark = didn't init, static noise =
+  same crash as before. **Not yet hardware-tested.**
+- Step 1 (next, if step 0 passes): left-side WPM + layer text widgets.
+- Step 2: right-side connection indicator text widget.
+- Step 3: static bitmaps once steps 1-2 are confirmed stable.
+
+### History: two earlier attempts, both crashed (paused as of this restart)
+
+Original goal was custom text + a small animated "cat" widget. Both
+crashed on real hardware the same way:
 
 - **Symptom**: firmware boots, but keyboard input is completely dead,
   and the display shows **static noise** (steady garbage, not
@@ -134,8 +162,9 @@ showing just that one symbol) to confirm/deny it's the corrupted one.
 
 ## Still open / next steps
 
-- OLED custom status screen - see TODO above. `zmk-nice-oled` was tried
-  and doesn't work here - see "Tried and abandoned" above.
+- OLED custom status screen - in progress, see "In progress" section
+  above (currently at step 0, not yet hardware-tested). `zmk-nice-oled`
+  was tried and doesn't work here - see "Tried and abandoned" above.
 - Left-half-only garbled icon glyphs on the built-in status screen - not
   root-caused, see note above (physical/left-half-specific, not RGB).
 - Tune the per-layer RGB colors in `config/src/rgb_layer_color.c` further
