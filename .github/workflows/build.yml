@@ -2,4 +2,13 @@ on: [push, pull_request, workflow_dispatch]
 
 jobs:
   build:
-    uses: zmkfirmware/zmk/.github/workflows/build-user-config.yml@main
+    # Pinned to v0.3.0 to match the ZMK revision in config/west.yml.
+    #
+    # On @main this branch built fine but the job still failed: main's
+    # shared workflow runs a post-build "explicit ZMK compat" check that
+    # errors when a board has a `//zmk` variant available and you didn't
+    # use it. That rule arrived with the Zephyr 4.1 / HWMv2 change and is
+    # meaningless at v0.3.0, where nice_nano_v2 is the correct name and
+    # no variant exists. The firmware compiled; only the guard tripped,
+    # which also skipped artifact upload.
+    uses: zmkfirmware/zmk/.github/workflows/build-user-config.yml@v0.3.0
