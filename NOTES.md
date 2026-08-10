@@ -4,11 +4,10 @@ Context dump for picking this back up.
 
 ## Where things stand
 
-`master` builds green ([run 31381150680](https://github.com/d53dave/zmk-config-sofle/actions/runs/31381150680),
-commit `8a02cc4`). Both halves reflashed and confirmed working, twice
-now - both needed a `settings_reset` cycle both times, **including the
-side that never had its firmware changed**. Confirmed working on
-hardware:
+`master` builds green (commit `96ed8cc`). Both halves reflashed and
+confirmed working, twice now - both needed a `settings_reset` cycle
+both times, **including the side that never had its firmware changed**.
+Confirmed working on hardware:
 
 - RGB underglow: on, toggle, brightness, color all work. Devicetree
   comes from mainline ZMK's own `sofle` shield overlay (not hand-
@@ -16,8 +15,11 @@ hardware:
   also cutting `ext_power` (which feeds the displays).
 - RGB idle timeout raised to 25 min (`CONFIG_ZMK_IDLE_TIMEOUT=1500000`,
   5x the previous 5 min default).
-- Display: back to ZMK's **built-in** status screen (not custom). Has
-  a known cosmetic bug - see TODO below - but boots and works.
+- Display: ZMK's **built-in** status screen (not custom), fonts tuned
+  to `CONFIG_LV_FONT_DEFAULT_MONTSERRAT_14` /
+  `CONFIG_ZMK_LV_FONT_DEFAULT_SMALL_MONTSERRAT_14` - accepted tradeoff
+  for the icon-glitch issue, see "RESOLVED" section below. Boots and
+  works, confirmed flashed and accepted by user as final for now.
 - Underglow color changes based on the active layer
   (`config/src/rgb_layer_color.c`) - purple (default) / amber (lower) /
   teal (raise), matching the purple already used elsewhere in the keymap.
@@ -239,7 +241,7 @@ end, but worth recording why so it isn't retried blindly:
   recommended - would give up the `//zmk` variant this repo's Studio
   support depends on).
 
-## TODO: built-in status screen icon glyphs render as noise (left half)
+## RESOLVED (accepted tradeoff): built-in status screen icon glyphs
 
 **Not a hardware issue** - confirmed working on the legacy branch on this
 same board (see "Tried and abandoned" above: legacy pins a completely
@@ -294,19 +296,58 @@ Real lead, confirmed from ZMK's own source
   whatever's wrong with the symbol glyphs specifically isn't fixed by
   this flag.
 
-**Next step**: no further built-in-screen leads right now. This is now
-lower priority than the custom-screen crash investigation (see below) -
-the custom screen replaces these widgets with plain-text ones anyway
-(deliberately avoiding `LV_SYMBOL_*`), so finishing that work sidesteps
-this bug entirely rather than requiring it to be root-caused.
+**Real mechanism found - it's a layout collision, not glyph corruption.**
+User observed the USB icon (top-left, `output_status`) visibly glitches
+specifically while holding a layer key, and clears on release. That's
+dynamic, not static - rules out "corrupted font asset" as the root
+cause. Real explanation: `output_status` (top-left) and `layer_status`
+(bottom-left) are stacked in the same column on a 32px-tall screen, and
+*neither has an explicit height reserved* (confirmed: no
+`lv_obj_set_size()` calls in either widget's source, both auto-size to
+content and get corner-aligned by `status_screen.c`). When a layer key
+is held, the layer label's text changes and can grow tall enough (at
+larger fonts) to visually overlap into the output icon's space above
+it. This explains everything observed: why bigger fonts made it worse
+(more overlap), why 8pt small-font avoided it (never grows tall enough
+to reach), and why it wasn't a fixed/static symptom.
+
+**Confirmed NOT explained by**: image/palette format (checked actual
+`lv_font_conv` command in the compiled font source - icon and text
+glyphs are generated identically, same bpp, same tool), the mono theme
+(checked `theme_apply()` - no special rule for `lv_label_class` at
+all), or `CONFIG_ZMK_DISPLAY_INVERT` (tried, made things worse
+globally).
+
+**Real fix would need actual layout control** (reserved widget heights
+or repositioning) - not available via Kconfig, only via the custom
+screen (crash risk, see below). **Decision: accepted the Kconfig-only
+tradeoff instead of pursuing that.** Final config (`config/sofle.conf`):
+
+```
+CONFIG_LV_FONT_DEFAULT_MONTSERRAT_14=y
+CONFIG_ZMK_LV_FONT_DEFAULT_SMALL_MONTSERRAT_14=y
+```
+
+This keeps output/battery icons clean (default font, no more
+white-background glitch) but the layer widget (small font, same 14pt)
+can still show the collision glitch during a held layer key - accepted
+as livable. Both fonts matching at 14 was chosen over reverting small
+to 8 (illegibly tiny) or 12 (part of the original broken combo). Not
+reopening this without a specific reason to - if it becomes annoying in
+daily use, the real fix is the custom screen, not more font-size
+guessing.
 
 ## Still open / next steps
 
 - OLED custom status screen - in progress, see "In progress" section
   above (currently at step 0, not yet hardware-tested). `zmk-nice-oled`
   was tried and doesn't work here - see "Tried and abandoned" above.
-- Left-half-only garbled icon glyphs on the built-in status screen - not
-  root-caused, see note above (physical/left-half-specific, not RGB).
+  Would also be the real fix for the icon-glitch tradeoff below, if it
+  becomes worth revisiting.
+- Left-half icon glyph glitch on the built-in status screen - resolved
+  as an accepted tradeoff (font sizing), see "RESOLVED" section above.
+  Root mechanism (layout collision, not corruption) is understood even
+  though not fully fixed.
 - Tune the per-layer RGB colors in `config/src/rgb_layer_color.c` further
   to taste if purple/amber/teal isn't quite right.
 - Kailh clicky switch swap (the original reason for revisiting this
