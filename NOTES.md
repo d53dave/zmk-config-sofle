@@ -94,12 +94,43 @@ end, but worth recording why so it isn't retried blindly:
   recommended - would give up the `//zmk` variant this repo's Studio
   support depends on).
 
-Also open: separately from this module, the *built-in* status screen's
-icons (battery/output symbol glyphs specifically, not the layer/WPM text)
-render as noise on the left half only, both halves running identical
-firmware/Kconfig/fonts (verified via CI build logs). RGB on/off doesn't
-affect it (tested). Points at something physical to the left OLED module
-or its wiring, not firmware - not yet root-caused.
+## TODO: built-in status screen icon glyphs render as noise (left half)
+
+**Not a hardware issue** - confirmed working on the legacy branch on this
+same board (see "Tried and abandoned" above: legacy pins a completely
+different ZMK fork, `infused-kim/zmk@sofle`, pre-LVGL-v9 API). This is a
+software/version regression to keep chasing via source/config, not
+wiring/physical causes.
+
+Symptom: only the *icon* symbol glyphs render as noise (confirmed: layer
+number and WPM digits next to them are legible), and only on the left
+half (confirmed: right half is fine). RGB on/off doesn't affect it
+(tested, ruled out).
+
+Real lead, confirmed from ZMK's own source
+(`app/src/display/widgets/Kconfig`):
+- `ZMK_WIDGET_OUTPUT_STATUS` (the widget using `LV_SYMBOL_USB`,
+  `LV_SYMBOL_WIFI`, `LV_SYMBOL_OK`, `LV_SYMBOL_CLOSE`,
+  `LV_SYMBOL_SETTINGS`) only compiles in on the **central** role - that's
+  the left half in this build (USB-connected via the hub).
+- `ZMK_WIDGET_PERIPHERAL_STATUS` (right half only) uses a *different*,
+  smaller glyph set - just `LV_SYMBOL_WIFI` + `LV_SYMBOL_OK`/`LV_SYMBOL_CLOSE`
+  (confirmed by reading both widgets' source). No `LV_SYMBOL_USB` or
+  `LV_SYMBOL_SETTINGS` on the peripheral side, ever.
+- So "only left is broken" doesn't require a per-half hardware
+  difference at all - the two halves render genuinely different glyphs
+  from the same font, because they run different widgets. The likely
+  culprit is one specific glyph unique to `output_status.c`, most likely
+  `LV_SYMBOL_USB` (if this keyboard connects to the host over USB rather
+  than BLE) or `LV_SYMBOL_SETTINGS`.
+- Searched ZMK's and LVGL's GitHub issues for a known report of this -
+  no direct hit yet, so likely specific to this project's exact
+  font/Kconfig combo rather than a widely-hit upstream bug.
+
+**Next step**: confirm which host transport this keyboard actually uses
+(USB vs BLE) to narrow down which specific glyph in `output_status.c` is
+rendering, then test that glyph in isolation (e.g. a minimal LVGL label
+showing just that one symbol) to confirm/deny it's the corrupted one.
 
 ## Still open / next steps
 
