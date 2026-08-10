@@ -88,6 +88,29 @@ test rather than jumping to the full design:
   capturing *before* it boots (crash likely happens at/near boot).
   Reflash normal `sofle_left` firmware afterwards - this build is
   diagnostic-only, not meant to be run normally.
+- **Attempted to capture the crash log, hit a bigger finding instead**:
+  flashed `sofle_left_debug_usb_logging.uf2`, set up a watcher polling
+  for `/dev/cu.usbmodem*` (macOS) across multiple unplug/replug cycles -
+  **no USB device ever appeared at all**. No connect sound, nothing in
+  the USB device list either. The normal `sofle_left` build (Studio
+  snippet) enumerates over USB every time, without exception, all
+  session - so this isn't a cable/port issue, it's specific to the
+  diagnostic build. This means the crash likely happens before USB even
+  initializes (much earlier than assumed), *or* the `zmk-usb-logging`
+  snippet itself doesn't work on this board independent of the custom
+  screen - can't tell which yet.
+- **Added a second diagnostic target to isolate that**:
+  `sofle_left_debug_usb_logging_builtin_screen` - same `zmk-usb-logging`
+  snippet, but the *built-in* status screen (no
+  `-DCONFIG_ZMK_DISPLAY_STATUS_SCREEN_CUSTOM=y`). If USB still doesn't
+  enumerate with this one, `zmk-usb-logging` itself is broken on this
+  board/config, unrelated to the custom screen. If USB *does* come up,
+  the custom-screen crash is severe enough to prevent USB init too - a
+  bigger, earlier fault than previously assumed. **Not yet tested.**
+  If USB logging turns out to be a dead end entirely, next options are a
+  hardware debug probe (SWD/RTT) if one is available, or a UART-to-USB
+  adapter wired directly to the nRF52840's hardware UART pins - both
+  more hands-on than what's been tried so far.
 - Step 1 (WPM + layer text widgets) and beyond are on hold until this
   crash is actually root-caused - no point building more on top of a
   foundation that crashes on one label.

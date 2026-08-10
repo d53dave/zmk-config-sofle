@@ -22,3 +22,12 @@ include:
     snippet: zmk-usb-logging
     cmake-args: -DCONFIG_ZMK_DISPLAY_STATUS_SCREEN_CUSTOM=y
     artifact-name: sofle_left_debug_usb_logging
+  # Isolates whether zmk-usb-logging itself is the problem, independent
+  # of the custom screen: same snippet, but the built-in status screen
+  # (no -DCONFIG_ZMK_DISPLAY_STATUS_SCREEN_CUSTOM=y). If USB still
+  # doesn't enumerate with this one, the snippet/board combo is broken
+  # on its own; if it does, the custom screen crash is killing USB too.
+  - board: nice_nano//zmk
+    shield: sofle_left
+    snippet: zmk-usb-logging
+    artifact-name: sofle_left_debug_usb_logging_builtin_screen
