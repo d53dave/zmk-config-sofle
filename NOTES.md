@@ -5,9 +5,10 @@ Context dump for picking this back up.
 ## Where things stand
 
 `master` builds green ([run 31381150680](https://github.com/d53dave/zmk-config-sofle/actions/runs/31381150680),
-commit `8a02cc4`). Both halves reflashed and confirmed working after the
-artifact-collision mixup (right needed a `settings_reset` cycle first,
-left didn't). Confirmed working on hardware:
+commit `8a02cc4`). Both halves reflashed and confirmed working, twice
+now - both needed a `settings_reset` cycle both times, **including the
+side that never had its firmware changed**. Confirmed working on
+hardware:
 
 - RGB underglow: on, toggle, brightness, color all work. Devicetree
   comes from mainline ZMK's own `sofle` shield overlay (not hand-
@@ -22,6 +23,26 @@ left didn't). Confirmed working on hardware:
   teal (raise), matching the purple already used elsewhere in the keymap.
   Plain event listener calling the existing `zmk_rgb_underglow_set_hsb()`
   API, no display/LVGL involved.
+
+## Operational note: reflashing one half can require resetting both
+
+Split communication between the halves is still BLE-based even though
+power is wired via TRRS (see top of this file / repo context - no
+batteries fitted, but BLE is still used for split data transport). The
+two halves maintain a BLE bond with each other. Confirmed twice now:
+after flashing broken/crashed firmware to one half (left) and then
+reflashing known-good firmware, **both halves needed a `settings_reset`
+cycle to recover, including the right half which never had its firmware
+touched**. Working theory: the left booting into crashed/different
+firmware and failing to (re)connect to the right over BLE can leave bad
+bond/connection state on the right side too, independent of what
+firmware is actually on it.
+
+**Practical takeaway**: after any experiment that changes one half's
+firmware to something that might crash or change split behavior, expect
+to `settings_reset` *both* halves to fully recover, not just the one
+that changed - don't waste time assuming a same-firmware half is
+unaffected.
 
 ## In progress: custom OLED status screen, take 3
 
