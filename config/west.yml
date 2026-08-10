@@ -17,6 +17,11 @@ manifest:
     #
     # So this branch trades current ZMK for working nice!oled widgets.
     # Do not bump this to `main` without doing that port first.
+    #
+    # CONFIRMED WORKING on hardware 2026-08-10: widgets render correctly
+    # on both SSD1306 halves, and nice!oled plus ZMK Studio fit in RAM
+    # together on the left half (they compiled together, which wasn't
+    # proof - this is).
     - name: zmk
       remote: zmkfirmware
       revision: v0.3.0
