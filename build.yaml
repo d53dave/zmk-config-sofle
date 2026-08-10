@@ -21,3 +21,4 @@ include:
     shield: sofle_left
     snippet: zmk-usb-logging
     cmake-args: -DCONFIG_ZMK_DISPLAY_STATUS_SCREEN_CUSTOM=y
+    artifact-name: sofle_left_debug_usb_logging

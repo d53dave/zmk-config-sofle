@@ -89,6 +89,23 @@ test rather than jumping to the full design:
 - Step 1 (WPM + layer text widgets) and beyond are on hold until this
   crash is actually root-caused - no point building more on top of a
   foundation that crashes on one label.
+- **CI artifact naming collision found (unrelated to the crash, but
+  explains a confusing "left dead" report after reverting)**: the
+  reusable workflow (`zmkfirmware/zmk/.github/workflows/build-user-config.yml`)
+  names artifacts as `${shield}-${board}-zmk` - it does **not** include
+  the snippet or cmake-args. The diagnostic target above and the normal
+  `sofle_left` build both use shield `sofle_left` + board `nice_nano//zmk`,
+  so they collided under the identical artifact name
+  `artifact-sofle_left-nice_nano__zmk-zmk`. Confirmed via the GitHub API
+  that a run with both targets only produced *one* artifact under that
+  name - meaning a "normal sofle_left" download could silently have
+  actually been the diagnostic build with the crashing screen forced on.
+  **Fixed**: added an explicit `artifact-name: sofle_left_debug_usb_logging`
+  to the diagnostic `build.yaml` entry so the two can never collide again.
+  If "wrong/dead firmware after flashing a supposedly-normal build" comes
+  up again for any shield combo, check for an artifact name collision
+  first via `gh api repos/d53dave/zmk-config-sofle/actions/runs/<id>/artifacts`
+  before assuming settings/hardware.
 
 ### History: two earlier attempts, both crashed (paused as of this restart)
 
