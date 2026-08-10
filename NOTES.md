@@ -60,6 +60,44 @@ crashed on real hardware in the same way:
   (built-in screen's C code, unmodified, just recompiled as "custom")
   reproduces it.
 
+## Experiment: zmk-nice-oled (in progress)
+
+Trying [mctechnology17/zmk-nice-oled](https://github.com/mctechnology17/zmk-nice-oled)
+(`nice_oled` shield) instead of hand-rolling the custom status screen again.
+It targets the exact display this board has (SSD1306 128x32 I2C) and its
+`nice_oled.overlay` is empty - it relies on the base `sofle` shield's own
+`oled` devicetree node, same as today, so no devicetree conflict.
+
+Important caveat: its `zmk_display_status_screen()` override uses the same
+`CONFIG_ZMK_DISPLAY_STATUS_SCREEN_CUSTOM` weak-symbol mechanism that
+crashed twice before (see TODO below) - so this isn't guaranteed to avoid
+that crash, but it doubles as a test of whether the crash was in the
+hand-rolled widget code specifically or something more fundamental. Also
+worth noting its "static image" mode still renders through a canvas +
+`lv_img`/buffer-rotation pipeline (`screen_peripheral.c`), not the truly
+minimal `lv_obj_create(NULL)`-only test originally suggested - it's a
+different, heavier code path than anything tried on this board before.
+
+Added as **new** build targets (`sofle_left nice_oled` / `sofle_right
+nice_oled`) alongside the existing plain ones in `build.yaml`, so the
+known-working firmware is still available to reflash if this crashes.
+Config kept deliberately minimal for the first test
+(`config/nice_oled.conf`): static "vim" image on the peripheral (no
+animation), just the layer widget on central, no RAW HID.
+
+Left `config/west.yml`'s ZMK revision on `main` rather than pinning to
+`v0.3.0` (which is what this module was tested against) - pinning would
+affect *all* build targets including the already-working ones, not just
+this experiment. If CI fails on API incompatibility, pin to `v0.3.0` as a
+separate, isolated change and re-test.
+
+Also open: separately from this module, the *built-in* status screen's
+icons (battery/output symbol glyphs specifically, not the layer/WPM text)
+render as noise on the left half only, both halves running identical
+firmware/Kconfig/fonts (verified via CI build logs). RGB on/off doesn't
+affect it (tested). Points at something physical to the left OLED module
+or its wiring, not firmware - not yet root-caused.
+
 ## Still open / next steps
 
 - OLED custom status screen - see TODO above.
