@@ -2,8 +2,10 @@
 # (config/src/rgb_layer_color.c) only needs CONFIG_ZMK_RGB_UNDERGLOW,
 # already set in sofle.conf - nothing to define for it here.
 
-# Custom status screen (config/src/status_screen.c). Re-opens ZMK's own
-# choice to default to the custom screen instead of the built-in one.
-choice ZMK_DISPLAY_STATUS_SCREEN
-    default ZMK_DISPLAY_STATUS_SCREEN_CUSTOM
-endchoice
+# Custom status screen (config/src/status_screen.c) - reverted back to
+# ZMK's built-in default screen for now after step 0b crashed hardware
+# (dead keyboard input on both halves). See NOTES.md. Re-enable by
+# uncommenting this once there's real diagnostic signal to work from.
+#choice ZMK_DISPLAY_STATUS_SCREEN
+#    default ZMK_DISPLAY_STATUS_SCREEN_CUSTOM
+#endchoice
