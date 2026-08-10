@@ -85,11 +85,20 @@ Config kept deliberately minimal for the first test
 (`config/nice_oled.conf`): static "vim" image on the peripheral (no
 animation), just the layer widget on central, no RAW HID.
 
-Left `config/west.yml`'s ZMK revision on `main` rather than pinning to
-`v0.3.0` (which is what this module was tested against) - pinning would
-affect *all* build targets including the already-working ones, not just
-this experiment. If CI fails on API incompatibility, pin to `v0.3.0` as a
-separate, isolated change and re-test.
+**Update**: first CI run failed - confirmed real LVGL API drift, not a
+config mistake (`LV_IMG_CF_INDEXED_1BIT` undeclared, `lv_draw_img_dsc_t`
+renamed to `lv_draw_image_dsc_t`, etc. - this module's generated image
+assets were built against the older LVGL bundled with ZMK `v0.3.0`, and
+`main` has since moved on). Checked: `v0.3.0` (tagged 2025-08-01) is
+actually the *newest* official ZMK release - `main` is 184 commits ahead
+but none of those have ever been cut into a tagged release, and Studio
+(`studio-rpc-usb-uart` snippet + `app/src/studio`) is already present at
+`v0.3.0`, so pinning isn't a feature downgrade. Pinned `config/west.yml`'s
+ZMK revision to `v0.3.0` repo-wide (also closes the pre-existing TODO
+below about not tracking `main` forever). This affects every build
+target, not just the nice_oled experiment, so **everything needs
+re-flashing and re-verifying on hardware** after this, not just the
+display.
 
 Also open: separately from this module, the *built-in* status screen's
 icons (battery/output symbol glyphs specifically, not the layer/WPM text)
