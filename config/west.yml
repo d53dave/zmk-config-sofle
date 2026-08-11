@@ -26,15 +26,24 @@ manifest:
       remote: zmkfirmware
       revision: v0.3.0
       import: app/west.yml
-    # Our fork, not upstream. Carries one patch: wpm.c gated the WPM
-    # graph behind `!MODIFIERS_INDICATORS_FIXED`, while screen.c draws
-    # the modifiers behind `MODIFIERS_INDICATORS_FIXED` - making the two
-    # mutually exclusive at compile time with no config path to having
-    # both. The fork drops that one term from the guard. See
-    # d53dave/zmk-nice-oled@2b107df.
+    # Our fork, not upstream. Carries two patches, both about making the
+    # WPM graph and the fixed modifier indicators coexist:
+    #
+    #   2b107df  wpm.c gated the WPM graph behind
+    #            `!MODIFIERS_INDICATORS_FIXED`, while screen.c draws the
+    #            modifiers behind `MODIFIERS_INDICATORS_FIXED` - making
+    #            the two mutually exclusive at compile time with no
+    #            config path to having both. Drops that one term from
+    #            the guard.
+    #   af7f430  ...which then reveals *why* upstream made them
+    #            exclusive: both draw around Y=95..129 and overlap. The
+    #            graph's position was hardcoded while every other widget
+    #            has a *_CUSTOM_X/Y pair, so this adds
+    #            NICE_OLED_WIDGET_WPM_GRAPH_CUSTOM_X/Y, defaulting to
+    #            the old hardcoded values. Set in sofle.conf.
     #
     # Upstream is dead (last push 2026-01-26), so there is little to
-    # rebase onto. If that changes, the patch is a single line.
+    # rebase onto. Both patches are small and mechanical.
     - name: zmk-nice-oled
       remote: d53dave
       revision: main
