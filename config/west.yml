@@ -2,8 +2,8 @@ manifest:
   remotes:
     - name: zmkfirmware
       url-base: https://github.com/zmkfirmware
-    - name: mctechnology17
-      url-base: https://github.com/mctechnology17
+    - name: d53dave
+      url-base: https://github.com/d53dave
   projects:
     # PINNED, deliberately. zmk-nice-oled is written against LVGL 8 and is
     # tested only against ZMK v0.3.0. ZMK's Zephyr 4.1 update (upstream
@@ -26,8 +26,17 @@ manifest:
       remote: zmkfirmware
       revision: v0.3.0
       import: app/west.yml
+    # Our fork, not upstream. Carries one patch: wpm.c gated the WPM
+    # graph behind `!MODIFIERS_INDICATORS_FIXED`, while screen.c draws
+    # the modifiers behind `MODIFIERS_INDICATORS_FIXED` - making the two
+    # mutually exclusive at compile time with no config path to having
+    # both. The fork drops that one term from the guard. See
+    # d53dave/zmk-nice-oled@2b107df.
+    #
+    # Upstream is dead (last push 2026-01-26), so there is little to
+    # rebase onto. If that changes, the patch is a single line.
     - name: zmk-nice-oled
-      remote: mctechnology17
+      remote: d53dave
       revision: main
   self:
     path: config
